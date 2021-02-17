@@ -31,7 +31,7 @@ public class ValidatorImpl implements Validator{
             StringBuilder pathBuilder = new StringBuilder();
 
             pathBuilder.append(path);
-            if(!pathBuilder.toString().isEmpty()) path += '.';
+            if(!pathBuilder.toString().isEmpty()) pathBuilder.append('.');
             pathBuilder.append(field.getName());
             if(field.get(object) == null) {
                 if(hasAnnotation(field, NotNull.class)){
@@ -54,38 +54,41 @@ public class ValidatorImpl implements Validator{
                 }
 
                 for(int i = 0; i < list.size(); i++){
+                    String indexedPath = pathBuilder.toString() + "[" + i + "]";
+
                     final Object element = list.get(i);
                     for(Annotation annotation : this.getParameterizedAnnotations(field)){
                         if(annotation.annotationType().equals(Positive.class) && element instanceof Number){
                             if(((Number) element).intValue() <= 0){
-                                errors.add(new PositiveError(pathBuilder.toString() + "[" + i + "]", element));
+                                errors.add(new PositiveError(indexedPath, element));
                             }
                         }
                         if(annotation.annotationType().equals(Negative.class) && element instanceof Number){
                             if(((Number) element).intValue() >= 0){
-                                errors.add(new NegativeError(pathBuilder.toString() + "[" + i + "]", element));
+                                errors.add(new NegativeError(indexedPath, element));
                             }
                         }
                         if(annotation.annotationType().equals(NotBlank.class) && element.getClass().equals(String.class)){
                             if(((String) element).isBlank()){
-                                errors.add(new BlankError(pathBuilder.toString() + "[" + i + "]"));
+                                errors.add(new BlankError(indexedPath));
                             }
                         }
                         if(annotation.annotationType().equals(InRange.class) && element instanceof Comparable){
                             if(((Number) element).intValue() < ((InRange) annotation).min()
                                     || ((Number) element).intValue() > ((InRange) annotation).max()){
                                 errors.add(new InRangeError(((InRange) annotation).min(), ((InRange) annotation).max(),
-                                        pathBuilder.toString() + "[" + i + "]", element));
+                                        indexedPath, element));
                             }
                         }
                         if(annotation.annotationType().equals(AnyOf.class) && element.getClass().equals(String.class)){
                             if(!Arrays.asList(((AnyOf) annotation).value()).contains((element))){
-                                errors.add(new AnyOfError(Arrays.asList(((AnyOf) annotation).value()), pathBuilder.toString() + "[" + i + "]", element));
+                                errors.add(new AnyOfError(Arrays.asList(((AnyOf) annotation).value()),
+                                        indexedPath, element));
                             }
                         }
                     }
 
-                    processObject(pathBuilder.toString() + "[" + i + "]", list.get(i));
+                    processObject(indexedPath, list.get(i));
                 }
             }else{
                 final Object element = field.get(object);
@@ -135,8 +138,8 @@ public class ValidatorImpl implements Validator{
         return Arrays.stream(type.getAnnotations()).map(Annotation::annotationType).anyMatch(x -> x.equals(annotation));
     }
 
-    private <T extends Annotation> T getAnnotation(Field field, Class<? extends Annotation> annotationType){
+    private <T extends Annotation> T getAnnotation(Field field, Class<T> annotationType){
         AnnotatedType type = field.getAnnotatedType();
-        return (T) type.getAnnotationsByType(annotationType)[0];
+        return type.getAnnotationsByType(annotationType)[0];
     }
 }

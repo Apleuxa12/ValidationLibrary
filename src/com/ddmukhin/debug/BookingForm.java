@@ -27,6 +27,7 @@ public class BookingForm {
             propertyType, Unrelated unrelated) {
         this.guests = guests;
         this.amenities = amenities;
+        this.propertyType = propertyType;
         this.unrelated = unrelated;
     }
 

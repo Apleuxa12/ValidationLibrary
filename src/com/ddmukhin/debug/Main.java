@@ -24,7 +24,6 @@ public class Main {
         Validator validator = new ValidatorImpl();
 
         Set<ValidationError> validationErrors = validator.validate(bookingForm);
-
         for(ValidationError error : validationErrors){
             System.out.println(error.getPath() + "\t|\t" + error.getMessage() + "\t|\t" + error.getFailedValue());
         }
