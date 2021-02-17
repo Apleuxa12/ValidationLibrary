@@ -14,7 +14,7 @@ public class SimpleValidationError implements ValidationError{
 
     @Override
     public String getMessage(){
-        return null;
+        return message;
     }
 
     @Override

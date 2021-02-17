@@ -15,15 +15,19 @@ public class BookingForm {
     private List<@NotNull GuestForm> guests;
 
     @NotNull
-    private List<@AnyOf({"TV", "Kitchen"}) String> amentities;
+    private List<@AnyOf({"TV", "Kitchen"}) String> amenities;
 
     @NotNull
     @AnyOf({"House", "Hostel"})
     private String propertyType;
 
-    public BookingForm(List<GuestForm> guests, List<String> amentities, String propertyType) {
+    @NotNull
+    private Unrelated unrelated;
+    public BookingForm(List<GuestForm> guests, List<String> amenities, String
+            propertyType, Unrelated unrelated) {
         this.guests = guests;
-        this.amentities = amentities;
-        this.propertyType = propertyType;
+        this.amenities = amenities;
+        this.unrelated = unrelated;
     }
+
 }
