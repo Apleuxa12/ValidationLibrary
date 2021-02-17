@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE_USE)
 public @interface Size {
 
-    public int min() default 0;
+    int min() default 0;
 
-    public int max() default Integer.MAX_VALUE;
+    int max() default Integer.MAX_VALUE;
 }

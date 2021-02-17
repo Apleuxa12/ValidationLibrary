@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE_USE)
 public @interface InRange {
 
-    public long min() default Long.MIN_VALUE;
+    long min() default Long.MIN_VALUE;
 
-    public long max() default Long.MAX_VALUE;
+   long max() default Long.MAX_VALUE;
 
 }

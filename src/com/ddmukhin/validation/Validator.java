@@ -6,6 +6,6 @@ import java.util.Set;
 
 public interface Validator {
 
-    Set<ValidationError> validate(Object object);
+    Set<ValidationError> validate(Object object) throws IllegalAccessException;
 
 }
