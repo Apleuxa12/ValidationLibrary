@@ -20,8 +20,15 @@ public class ValidatorImpl implements Validator{
         return errors;
     }
 
+    @Override
+    public void printErrors(){
+        for (ValidationError error : errors) {
+            System.out.println(error.getPath() + "\t|\t" + error.getMessage() + "\t|\t" + error.getFailedValue());
+        }
+    }
+
     private void processObject(String path, Object object) throws IllegalAccessException {
-        if(ObjectUtils.isPrimitive(object.getClass()) || !object.getClass().isAnnotationPresent(Constrained.class)) {
+        if(!object.getClass().isAnnotationPresent(Constrained.class)) {
             return;
         }
 
@@ -33,6 +40,7 @@ public class ValidatorImpl implements Validator{
             pathBuilder.append(path);
             if(!pathBuilder.toString().isEmpty()) pathBuilder.append('.');
             pathBuilder.append(field.getName());
+
             if(field.get(object) == null) {
                 if(hasAnnotation(field, NotNull.class)){
                     errors.add(new NotNullError(pathBuilder.toString()));
@@ -47,7 +55,7 @@ public class ValidatorImpl implements Validator{
                         errors.add(new NotEmptyError(pathBuilder.toString()));
                 }
                 if(hasAnnotation(field, Size.class)){
-                    var annotation = this. <Size> getAnnotation(field, Size.class);
+                    var annotation = getAnnotation(field, Size.class);
                     if(list.size() < annotation.min() || list.size() > annotation.max()){
                         errors.add(new SizeError(annotation.min(), annotation.max(), pathBuilder.toString(), list.size()));
                     }
@@ -86,6 +94,20 @@ public class ValidatorImpl implements Validator{
                                         indexedPath, element));
                             }
                         }
+//                      List in list case
+                        if(element instanceof Collection<?>) {
+                            if (annotation.annotationType().equals(NotEmpty.class)) {
+                                if (((Collection<?>) list.get(i)).isEmpty())
+                                    errors.add(new NotEmptyError(indexedPath));
+                            }
+                            if (annotation.annotationType().equals(Size.class)) {
+                                if (list.size() < ((Size) annotation).min() || list.size() > ((Size) annotation).max()) {
+                                    errors.add(new SizeError(((Size) annotation).min(), ((Size) annotation).max(),
+                                            indexedPath, list.size()));
+                                }
+                            }
+//                           SHOULD RECURSIVELY ITERATE AGAIN NOT IN PROCESS OBJECT BUT IN LOOP!
+                        }
                     }
 
                     processObject(indexedPath, list.get(i));
@@ -108,7 +130,7 @@ public class ValidatorImpl implements Validator{
                     }
                 }
                 if(hasAnnotation(field, InRange.class) && element instanceof Comparable){
-                    var annotation = this. <InRange> getAnnotation(field, InRange.class);
+                    var annotation = getAnnotation(field, InRange.class);
                     if(((Number) element).intValue() < (annotation).min()
                             || ((Number) element).intValue() > (annotation).max()){
                         errors.add(new InRangeError((annotation).min(), (annotation).max(),
@@ -116,7 +138,7 @@ public class ValidatorImpl implements Validator{
                     }
                 }
                 if(hasAnnotation(field, AnyOf.class) && element.getClass().equals(String.class)){
-                    var annotation = this. <AnyOf> getAnnotation(field, AnyOf.class);
+                    var annotation = getAnnotation(field, AnyOf.class);
                     if(!Arrays.asList((annotation).value()).contains((element))){
                         errors.add(new AnyOfError(Arrays.asList((annotation).value()), pathBuilder.toString(), element));
                     }

@@ -21,14 +21,17 @@ public class BookingForm {
     @AnyOf({"House", "Hostel"})
     private String propertyType;
 
+    private List<List<@AnyOf({"A"}) String>> values;
+
     @NotNull
     private Unrelated unrelated;
     public BookingForm(List<GuestForm> guests, List<String> amenities, String
-            propertyType, Unrelated unrelated) {
+            propertyType, Unrelated unrelated, List<List<String>> values) {
         this.guests = guests;
         this.amenities = amenities;
         this.propertyType = propertyType;
         this.unrelated = unrelated;
+        this.values = values;
     }
 
 }
