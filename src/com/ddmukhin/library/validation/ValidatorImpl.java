@@ -55,7 +55,7 @@ public class ValidatorImpl implements Validator{
                 }
                 if(hasAnnotation(field, Size.class)){
                     var annotation = getAnnotation(field, Size.class);
-                    if(list.size() < annotation.min() || list.size() > annotation.max()){
+                    if(list.size() <= annotation.min() || list.size() >= annotation.max()){
                         errors.add(new SizeError(annotation.min(), annotation.max(), pathBuilder.toString(), list.size()));
                     }
                 }
@@ -77,12 +77,12 @@ public class ValidatorImpl implements Validator{
                         }
                         if(annotation.annotationType().equals(NotBlank.class) && element.getClass().equals(String.class)){
                             if(((String) element).isBlank()){
-                                errors.add(new BlankError(indexedPath));
+                                errors.add(new BlankError(indexedPath, ((String) element)));
                             }
                         }
                         if(annotation.annotationType().equals(InRange.class) && element instanceof Comparable){
-                            if(((Number) element).intValue() < ((InRange) annotation).min()
-                                    || ((Number) element).intValue() > ((InRange) annotation).max()){
+                            if(((Number) element).intValue() <= ((InRange) annotation).min()
+                                    || ((Number) element).intValue() >= ((InRange) annotation).max()){
                                 errors.add(new InRangeError(((InRange) annotation).min(), ((InRange) annotation).max(),
                                         indexedPath, element));
                             }
@@ -100,7 +100,7 @@ public class ValidatorImpl implements Validator{
                                     errors.add(new NotEmptyError(indexedPath));
                             }
                             if (annotation.annotationType().equals(Size.class)) {
-                                if (list.size() < ((Size) annotation).min() || list.size() > ((Size) annotation).max()) {
+                                if (list.size() <= ((Size) annotation).min() || list.size() >= ((Size) annotation).max()) {
                                     errors.add(new SizeError(((Size) annotation).min(), ((Size) annotation).max(),
                                             indexedPath, list.size()));
                                 }
@@ -124,13 +124,13 @@ public class ValidatorImpl implements Validator{
                 }
                 if(hasAnnotation(field, NotBlank.class) && element.getClass().equals(String.class)){
                     if(((String) element).isBlank()){
-                        errors.add(new BlankError(pathBuilder.toString()));
+                        errors.add(new BlankError(pathBuilder.toString(), ((String) element)));
                     }
                 }
                 if(hasAnnotation(field, InRange.class) && element instanceof Comparable){
                     var annotation = getAnnotation(field, InRange.class);
-                    if(((Number) element).intValue() < (annotation).min()
-                            || ((Number) element).intValue() > (annotation).max()){
+                    if(((Number) element).intValue() <= (annotation).min()
+                            || ((Number) element).intValue() >= (annotation).max()){
                         errors.add(new InRangeError((annotation).min(), (annotation).max(),
                                 pathBuilder.toString(), element));
                     }
