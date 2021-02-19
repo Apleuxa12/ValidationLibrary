@@ -1,8 +1,7 @@
-package com.ddmukhin.validation;
+package com.ddmukhin.library.validation;
 
-import com.ddmukhin.annotations.*;
-import com.ddmukhin.utils.ObjectUtils;
-import com.ddmukhin.validation.errors.*;
+import com.ddmukhin.library.annotations.*;
+import com.ddmukhin.library.validation.errors.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedParameterizedType;

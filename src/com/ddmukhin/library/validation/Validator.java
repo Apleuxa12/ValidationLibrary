@@ -1,6 +1,6 @@
-package com.ddmukhin.validation;
+package com.ddmukhin.library.validation;
 
-import com.ddmukhin.validation.errors.ValidationError;
+import com.ddmukhin.library.validation.errors.ValidationError;
 
 import java.util.Set;
 

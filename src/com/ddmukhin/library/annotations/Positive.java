@@ -1,4 +1,4 @@
-package com.ddmukhin.annotations;
+package com.ddmukhin.library.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

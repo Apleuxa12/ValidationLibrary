@@ -1,4 +1,4 @@
-package com.ddmukhin.validation.errors;
+package com.ddmukhin.library.validation.errors;
 
 public class BlankError extends SimpleValidationError {
     public BlankError(String path) {

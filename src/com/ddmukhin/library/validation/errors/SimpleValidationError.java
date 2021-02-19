@@ -1,4 +1,4 @@
-package com.ddmukhin.validation.errors;
+package com.ddmukhin.library.validation.errors;
 
 public class SimpleValidationError implements ValidationError{
 

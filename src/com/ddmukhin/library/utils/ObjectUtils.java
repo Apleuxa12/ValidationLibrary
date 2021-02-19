@@ -1,4 +1,4 @@
-package com.ddmukhin.utils;
+package com.ddmukhin.library.utils;
 
 import java.util.Arrays;
 import java.util.HashSet;
