@@ -106,7 +106,6 @@ public class ValidatorImpl implements Validator{
                                             indexedPath, list.size()));
                                 }
                             }
-//                           SHOULD RECURSIVELY ITERATE AGAIN NOT IN PROCESS OBJECT BUT IN LOOP!
                         }
                     }
 
