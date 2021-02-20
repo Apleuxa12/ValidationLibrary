@@ -19,6 +19,13 @@ class ValidatorImplTest {
 
     static class EmptyObject{
 
+        @Positive
+        public int x;
+
+        public EmptyObject(int x){
+            this.x = x;
+        }
+
     }
 
     @Constrained
@@ -63,7 +70,7 @@ class ValidatorImplTest {
 
     @Test
     void validateEmptyObject() throws IllegalAccessException {
-        Set<ValidationError> errors = validator.validate(new EmptyObject());
+        Set<ValidationError> errors = validator.validate(new EmptyObject(-1));
         assertEquals(errors.size(), 0);
     }
 
@@ -96,7 +103,8 @@ class ValidatorImplTest {
 
     @Test
     void validatePrimitiveObjectsBlankError() throws IllegalAccessException{
-        PrimitiveObjects objects = new PrimitiveObjects("  ", "a", 1, -1, 1, true);
+        String blankValue = "  ";
+        PrimitiveObjects objects = new PrimitiveObjects(blankValue, "a", 1, -1, 1, true);
         Set<ValidationError> errors = validator.validate(objects);
         assertEquals(errors.size(), 1);
         for(var error : errors) {
@@ -104,7 +112,7 @@ class ValidatorImplTest {
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "value1");
-            assertEquals(error.getFailedValue(), "  ");
+            assertEquals(error.getFailedValue(), "'" + blankValue + "'");
         }
     }
 
@@ -229,7 +237,9 @@ class ValidatorImplTest {
 
     @Test
     void validateCollectionObjectsNotBlankError() throws IllegalAccessException{
-        CollectionObjects objects = new CollectionObjects(List.of("a"), List.of("a", "b", "c"), List.of("  ", "b"));
+        String blankValue = "  ";
+
+        CollectionObjects objects = new CollectionObjects(List.of("a"), List.of("a", "b", "c"), List.of(blankValue, "b"));
         Set<ValidationError> errors = validator.validate(objects);
         assertEquals(errors.size(), 1);
 
@@ -238,7 +248,7 @@ class ValidatorImplTest {
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "value3[0]");
-            assertEquals(error.getFailedValue(), "  ");
+            assertEquals(error.getFailedValue(), "'" + blankValue + "'");
         }
     }
 
@@ -308,8 +318,9 @@ class ValidatorImplTest {
 
     @Test
     void validateConstrainedObjectCollectionObjectsNotBlankError() throws IllegalAccessException{
+        String blankValue = "  ";
         PrimitiveObjects primitiveObjects = new PrimitiveObjects("value1", "a", 1, -1, 1, true);
-        CollectionObjects collectionObjects = new CollectionObjects(List.of("a"), List.of("a", "b"), List.of("  ", "b"));
+        CollectionObjects collectionObjects = new CollectionObjects(List.of("a"), List.of("a", "b"), List.of(blankValue, "b"));
         ConstrainedObject object = new ConstrainedObject(collectionObjects, primitiveObjects);
         Set<ValidationError> errors = validator.validate(object);
         assertEquals(errors.size(), 1);
@@ -319,7 +330,7 @@ class ValidatorImplTest {
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "collectionObjects.value3[0]");
-            assertEquals(error.getFailedValue(), "  ");
+            assertEquals(error.getFailedValue(), "'" + blankValue + "'");
         }
     }
 
@@ -391,5 +402,6 @@ class ValidatorImplTest {
         );
         Set<ValidationError> errors = validator.validate(bookingForm);
         assertEquals(errors.size(), 5);
+        System.out.println(validator.toString());
     }
 }
