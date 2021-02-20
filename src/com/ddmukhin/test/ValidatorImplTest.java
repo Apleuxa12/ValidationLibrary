@@ -99,7 +99,7 @@ class ValidatorImplTest {
         Set<ValidationError> errors = validator.validate(objects);
         assertEquals(errors.size(), 1);
         for(var error : errors) {
-            assertTrue(error instanceof BlankError);
+            assertTrue(error instanceof NotBlankError);
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "value1");
@@ -125,6 +125,7 @@ class ValidatorImplTest {
     void validatePrimitiveObjectsPositiveError() throws IllegalAccessException{
         PrimitiveObjects objects = new PrimitiveObjects("value1", "a", -1, -1, 1, true);
         Set<ValidationError> errors = validator.validate(objects);
+        System.out.println(validator.toString());
         assertEquals(errors.size(), 1);
         for(var error : errors){
             assertTrue(error instanceof PositiveError);
@@ -217,7 +218,7 @@ class ValidatorImplTest {
         assertEquals(errors.size(), 1);
 
         for(var error : errors){
-            assertTrue(error instanceof BlankError);
+            assertTrue(error instanceof NotBlankError);
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "value3[0]");
@@ -298,7 +299,7 @@ class ValidatorImplTest {
         assertEquals(errors.size(), 1);
 
         for(var error : errors){
-            assertTrue(error instanceof BlankError);
+            assertTrue(error instanceof NotBlankError);
 
             assertEquals(error.getMessage(), "must not be blank");
             assertEquals(error.getPath(), "collectionObjects.value3[0]");
