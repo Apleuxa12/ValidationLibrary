@@ -20,10 +20,12 @@ public class ValidatorImpl implements Validator{
     }
 
     @Override
-    public void printErrors(){
+    public String toString(){
+        StringBuilder stringBuilder = new StringBuilder();
         for (ValidationError error : errors) {
-            System.out.println(error.getPath() + "\t|\t" + error.getMessage() + "\t|\t" + error.getFailedValue());
+            stringBuilder.append(error.getPath()).append(" | ").append(error.getMessage()).append(" | ").append(error.getFailedValue()).append('\n');
         }
+        return stringBuilder.toString();
     }
 
     private void processObject(String path, Object object) throws IllegalAccessException {
@@ -55,7 +57,7 @@ public class ValidatorImpl implements Validator{
                 }
                 if(hasAnnotation(field, Size.class)){
                     var annotation = getAnnotation(field, Size.class);
-                    if(list.size() <= annotation.min() || list.size() >= annotation.max()){
+                    if(list.size() < annotation.min() || list.size() > annotation.max()){
                         errors.add(new SizeError(annotation.min(), annotation.max(), pathBuilder.toString(), list.size()));
                     }
                 }
@@ -66,12 +68,12 @@ public class ValidatorImpl implements Validator{
                     final Object element = list.get(i);
                     for(Annotation annotation : this.getParameterizedAnnotations(field)){
                         if(annotation.annotationType().equals(Positive.class) && element instanceof Number){
-                            if(((Number) element).intValue() <= 0){
+                            if(((Number) element).intValue() < 0){
                                 errors.add(new PositiveError(indexedPath, element));
                             }
                         }
                         if(annotation.annotationType().equals(Negative.class) && element instanceof Number){
-                            if(((Number) element).intValue() >= 0){
+                            if(((Number) element).intValue() > 0){
                                 errors.add(new NegativeError(indexedPath, element));
                             }
                         }
@@ -81,8 +83,8 @@ public class ValidatorImpl implements Validator{
                             }
                         }
                         if(annotation.annotationType().equals(InRange.class) && element instanceof Comparable){
-                            if(((Number) element).intValue() <= ((InRange) annotation).min()
-                                    || ((Number) element).intValue() >= ((InRange) annotation).max()){
+                            if(((Number) element).intValue() < ((InRange) annotation).min()
+                                    || ((Number) element).intValue() > ((InRange) annotation).max()){
                                 errors.add(new InRangeError(((InRange) annotation).min(), ((InRange) annotation).max(),
                                         indexedPath, element));
                             }
@@ -100,7 +102,7 @@ public class ValidatorImpl implements Validator{
                                     errors.add(new NotEmptyError(indexedPath));
                             }
                             if (annotation.annotationType().equals(Size.class)) {
-                                if (list.size() <= ((Size) annotation).min() || list.size() >= ((Size) annotation).max()) {
+                                if (list.size() < ((Size) annotation).min() || list.size() > ((Size) annotation).max()) {
                                     errors.add(new SizeError(((Size) annotation).min(), ((Size) annotation).max(),
                                             indexedPath, list.size()));
                                 }
@@ -113,12 +115,12 @@ public class ValidatorImpl implements Validator{
             }else{
                 final Object element = field.get(object);
                 if(hasAnnotation(field, Positive.class) && element instanceof Number){
-                    if(((Number) element).intValue() <= 0){
+                    if(((Number) element).intValue() < 0){
                         errors.add(new PositiveError(pathBuilder.toString(), element));
                     }
                 }
                 if(hasAnnotation(field, Negative.class) && element instanceof Number){
-                    if(((Number) element).intValue() >= 0){
+                    if(((Number) element).intValue() > 0){
                         errors.add(new NegativeError(pathBuilder.toString(), element));
                     }
                 }
@@ -129,8 +131,8 @@ public class ValidatorImpl implements Validator{
                 }
                 if(hasAnnotation(field, InRange.class) && element instanceof Comparable){
                     var annotation = getAnnotation(field, InRange.class);
-                    if(((Number) element).intValue() <= (annotation).min()
-                            || ((Number) element).intValue() >= (annotation).max()){
+                    if(((Number) element).intValue() < (annotation).min()
+                            || ((Number) element).intValue() > (annotation).max()){
                         errors.add(new InRangeError((annotation).min(), (annotation).max(),
                                 pathBuilder.toString(), element));
                     }
