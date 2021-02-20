@@ -7,6 +7,7 @@ import com.ddmukhin.library.validation.errors.*;
 import com.ddmukhin.library.validation.errors.ValidationError;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -172,7 +173,7 @@ class ValidatorImplTest {
         @Size(min = 1, max = 3)
         public List<String> value2;
 
-        public List<@NotBlank String> value3;
+        public List<@NotNull @NotBlank String> value3;
 
         public CollectionObjects(List<String> value1, List<String> value2, List<String> value3){
             this.value1 = value1;
@@ -208,6 +209,21 @@ class ValidatorImplTest {
             assertEquals(error.getMessage(), "must be in range between 1 and 3");
             assertEquals(error.getPath(), "value2");
             assertEquals(error.getFailedValue(), 4);
+        }
+    }
+
+    @Test
+    void validateCollectionObjectsNotNullError() throws IllegalAccessException{
+        CollectionObjects objects = new CollectionObjects(List.of("a"), List.of("a", "b", "c"), new ArrayList<>(){ { add(null); }});
+        Set<ValidationError> errors = validator.validate(objects);
+        assertEquals(errors.size(), 1);
+
+        for(var error : errors){
+            assertTrue(error instanceof NotNullError);
+
+            assertEquals(error.getMessage(), "must not be null");
+            assertEquals(error.getPath(), "value3[0]");
+            assertNull(error.getFailedValue());
         }
     }
 

@@ -25,10 +25,9 @@ public class ValidatorImpl implements Validator {
 
             final String string = (String) object;
 
-            if (Arrays.asList(annotation.value()).contains(string))
-                return Optional.empty();
-            else
+            if (!Arrays.asList(annotation.value()).contains(string))
                 return Optional.of(new AnyOfError(Arrays.asList(annotation.value()), path, object));
+            return Optional.empty();
         });
 
         functions.put(InRange.class, (annotationInstance, field, object, path) -> {
@@ -167,9 +166,12 @@ public class ValidatorImpl implements Validator {
                     for (var annotation : objectAnnotations) {
                         if (hasParameterizedAnnotation(field, annotation))
                             functions.get(annotation).
-                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), pathBuilder.toString()).
+                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), indexedPath).
                                     ifPresent(errors::add);
                     }
+
+                    if(list.get(i) == null)
+                        continue;
 
                     for (var annotation : primitiveAnnotations) {
                         if (hasParameterizedAnnotation(field, annotation))
