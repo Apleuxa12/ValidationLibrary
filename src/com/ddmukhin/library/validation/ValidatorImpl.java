@@ -5,22 +5,27 @@ import com.ddmukhin.library.validation.errors.*;
 import com.ddmukhin.library.validation.functional.AnnotationFunction;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedParameterizedType;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class ValidatorImpl implements Validator{
+import static com.ddmukhin.library.utils.AnnotationUtils.*;
+
+public class ValidatorImpl implements Validator {
 
     private final Set<ValidationError> errors = new HashSet<>();
 
     private final Map<Class<? extends Annotation>, AnnotationFunction> functions = new HashMap<>();
 
-    private void fillMap(){
+    private void fillFunctions() {
         functions.put(AnyOf.class, (annotationInstance, field, object, path) -> {
             AnyOf annotation = (AnyOf) annotationInstance;
 
-            if(Arrays.asList(annotation.value()).contains(object) || !object.getClass().equals(String.class))
+            if(!object.getClass().equals(String.class))
+                return Optional.empty();
+
+            final String string = (String) object;
+
+            if (Arrays.asList(annotation.value()).contains(string))
                 return Optional.empty();
             else
                 return Optional.of(new AnyOfError(Arrays.asList(annotation.value()), path, object));
@@ -29,51 +34,51 @@ public class ValidatorImpl implements Validator{
         functions.put(InRange.class, (annotationInstance, field, object, path) -> {
             InRange annotation = (InRange) annotationInstance;
 
-            if(!Number.class.isAssignableFrom(object.getClass()))
+            if (!Number.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
             final Number number = (Number) object;
 
-            if((number.intValue() < annotation.min() || number.intValue() > annotation.max()))
+            if ((number.longValue() < annotation.min() || number.longValue() > annotation.max()))
                 return Optional.of(new InRangeError(annotation.min(), annotation.max(), path, object));
             return Optional.empty();
         });
 
         functions.put(Negative.class, (annotationInstance, field, object, path) -> {
-            if(!Number.class.isAssignableFrom(object.getClass()))
+            if (!Number.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
             final Number number = (Number) object;
 
-            if(number.intValue() > 0)
+            if (number.intValue() > 0)
                 return Optional.of(new NegativeError(path, object));
             return Optional.empty();
         });
 
         functions.put(Positive.class, (annotationInstance, field, object, path) -> {
-            if(!Number.class.isAssignableFrom(object.getClass()))
+            if (!Number.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
             final Number number = (Number) object;
 
-            if(number.intValue() < 0)
+            if (number.intValue() < 0)
                 return Optional.of(new PositiveError(path, object));
             return Optional.empty();
         });
 
         functions.put(NotNull.class, (annotationInstance, field, object, path) -> {
-            if(object == null)
+            if (object == null)
                 return Optional.of(new NotNullError(path));
             return Optional.empty();
         });
 
         functions.put(NotBlank.class, (annotationInstance, field, object, path) -> {
-            if(!String.class.equals(object.getClass()))
+            if (!String.class.equals(object.getClass()))
                 return Optional.empty();
 
             final String string = (String) object;
 
-            if(string.isBlank())
+            if (string.isBlank())
                 return Optional.of(new NotBlankError(path, string));
             return Optional.empty();
         });
@@ -81,26 +86,23 @@ public class ValidatorImpl implements Validator{
         functions.put(Size.class, (annotationInstance, field, object, path) -> {
             Size annotation = (Size) annotationInstance;
 
-           if(!Collection.class.isAssignableFrom(object.getClass()))
-               return Optional.empty();
-
-           final Collection<?> collection = (Collection<?>) object;
-
-           if(collection.size() < annotation.min() || collection.size() > annotation.max())
-               return Optional.of(new SizeError(annotation.min(), annotation.max(), path, collection.size()));
-           return Optional.empty();
-        });
-
-        functions.put(NotEmpty.class, (annotationInstance, field, object, path) -> {
-            if(!hasAnnotation(field, NotEmpty.class))
-                return Optional.empty();
-
-            if(!Collection.class.isAssignableFrom(object.getClass()))
+            if (!Collection.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
             final Collection<?> collection = (Collection<?>) object;
 
-            if(collection.size() == 0)
+            if (collection.size() < annotation.min() || collection.size() > annotation.max())
+                return Optional.of(new SizeError(annotation.min(), annotation.max(), path, collection.size()));
+            return Optional.empty();
+        });
+
+        functions.put(NotEmpty.class, (annotationInstance, field, object, path) -> {
+            if (!Collection.class.isAssignableFrom(object.getClass()))
+                return Optional.empty();
+
+            final Collection<?> collection = (Collection<?>) object;
+
+            if (collection.size() == 0)
                 return Optional.of(new NotEmptyError(path));
             return Optional.empty();
         });
@@ -108,132 +110,116 @@ public class ValidatorImpl implements Validator{
 
     @Override
     public Set<ValidationError> validate(Object object) throws IllegalAccessException {
-        fillMap();
-        processObject("", object, List.of(AnyOf.class, InRange.class, Positive.class, Negative.class, NotBlank.class),
-                                       List.of(NotEmpty.class, Size.class),
-                                       List.of(NotNull.class));
+        fillFunctions();
+        processObject("", object,
+                /*annotations for class*/ List.of(Constrained.class),
+                /*annotations for primitive values*/ List.of(AnyOf.class, InRange.class, Positive.class, Negative.class, NotBlank.class),
+                /*annotations for collections*/ List.of(NotEmpty.class, Size.class),
+                /*annotations for every object*/ List.of(NotNull.class));
         return errors;
     }
 
-    @Override
-    public String toString(){
-        StringBuilder stringBuilder = new StringBuilder();
-        for (ValidationError error : errors) {
-            stringBuilder.append(error.getPath()).append(" | ").append(error.getMessage()).append(" | ").append(error.getFailedValue()).append('\n');
-        }
-        return stringBuilder.toString();
-    }
-
     private void processObject(String path, Object object,
-                               final List<Class<? extends Annotation>> primitiveChecks,
-                               final List<Class<? extends Annotation>> collectionChecks,
-                               final List<Class<? extends Annotation>> everyObjectChecks) throws IllegalAccessException {
-        if(!object.getClass().isAnnotationPresent(Constrained.class)) {
-            return;
-        }
+                               final List<Class<? extends Annotation>> classAnnotations,
+                               final List<Class<? extends Annotation>> primitiveAnnotations,
+                               final List<Class<? extends Annotation>> collectionAnnotations,
+                               final List<Class<? extends Annotation>> objectAnnotations) throws IllegalAccessException {
 
-        for(Field field : object.getClass().getDeclaredFields()){
+        for (var annotation : classAnnotations)
+            if (!object.getClass().isAnnotationPresent(annotation))
+                return;
+
+
+        for (Field field : object.getClass().getDeclaredFields()) {
             field.setAccessible(true);
 
             StringBuilder pathBuilder = new StringBuilder();
 
             pathBuilder.append(path);
-            if(!pathBuilder.toString().isEmpty()) pathBuilder.append('.');
+            if (!pathBuilder.toString().isEmpty()) pathBuilder.append('.');
             pathBuilder.append(field.getName());
 
-            for(var annotation : everyObjectChecks){
-                if(hasAnnotation(field, annotation))
+            for (var annotation : objectAnnotations) {
+                if (hasAnnotation(field, annotation))
                     functions.get(annotation).
                             validate(getAnnotation(field, annotation), field, field.get(object), pathBuilder.toString()).
                             ifPresent(errors::add);
             }
 
-            if(field.get(object) == null)
+            if (field.get(object) == null)
                 continue;
 
-            if(List.class.isAssignableFrom(field.get(object).getClass())){
+            final Object element = field.get(object);
+
+            if (List.class.isAssignableFrom(element.getClass())) {
                 List<Object> list = (List<Object>) field.get(object);
 
-                for(var annotation : collectionChecks){
-                    if(hasAnnotation(field, annotation))
+                for (var annotation : collectionAnnotations) {
+                    if (hasAnnotation(field, annotation))
                         functions.get(annotation).
                                 validate(getAnnotation(field, annotation), field, list, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
-                for(int i = 0; i < list.size(); i++){
+                for (int i = 0; i < list.size(); i++) {
                     String indexedPath = pathBuilder.toString() + "[" + i + "]";
 
-                    final Object element = list.get(i);
-
-                    for(var annotation : everyObjectChecks){
-                        if(hasParameterizedAnnotation(field, annotation))
+                    for (var annotation : objectAnnotations) {
+                        if (hasParameterizedAnnotation(field, annotation))
                             functions.get(annotation).
-                                    validate(getParameterizedAnnotation(field, annotation), field, element, pathBuilder.toString()).
+                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), pathBuilder.toString()).
                                     ifPresent(errors::add);
                     }
 
-                    for(var annotation : primitiveChecks){
-                        if(hasParameterizedAnnotation(field, annotation))
+                    for (var annotation : primitiveAnnotations) {
+                        if (hasParameterizedAnnotation(field, annotation))
                             functions.get(annotation).
-                                    validate(getParameterizedAnnotation(field, annotation), field, element, indexedPath).
+                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), indexedPath).
                                     ifPresent(errors::add);
                     }
 
 //                  List in list case
-                    if(element instanceof Collection<?>){
+                    if (list.get(i) instanceof Collection<?>) {
                         final Collection<?> collection = (Collection<?>) element;
 
-                        for(var annotation : collectionChecks){
-                            if(hasParameterizedAnnotation(field, annotation))
+                        for (var annotation : collectionAnnotations) {
+                            if (hasParameterizedAnnotation(field, annotation))
                                 functions.get(annotation).
                                         validate(getParameterizedAnnotation(field, annotation), field, collection, indexedPath).
                                         ifPresent(errors::add);
                         }
                     }
 
-                    processObject(indexedPath, list.get(i), primitiveChecks, collectionChecks, everyObjectChecks);
+                    processObject(indexedPath, list.get(i),
+                            classAnnotations, primitiveAnnotations, collectionAnnotations, objectAnnotations);
                 }
-            }else{
-                final Object element = field.get(object);
-
-                for(var annotation : everyObjectChecks){
-                    if(hasAnnotation(field, annotation))
+            } else {
+                for (var annotation : objectAnnotations) {
+                    if (hasAnnotation(field, annotation))
                         functions.get(annotation).
                                 validate(getAnnotation(field, annotation), field, element, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
-                for(var annotation : primitiveChecks){
-                    if(hasAnnotation(field, annotation))
+                for (var annotation : primitiveAnnotations) {
+                    if (hasAnnotation(field, annotation))
                         functions.get(annotation).
                                 validate(getAnnotation(field, annotation), field, element, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
-                processObject(pathBuilder.toString(), field.get(object), primitiveChecks, collectionChecks, everyObjectChecks);
+                processObject(pathBuilder.toString(), field.get(object),
+                        classAnnotations, primitiveAnnotations, collectionAnnotations, objectAnnotations);
             }
         }
     }
 
-    private <T extends Annotation> T getAnnotation(Field field, Class<T> annotationType){
-        AnnotatedType type = field.getAnnotatedType();
-        return type.getAnnotationsByType(annotationType)[0];
-    }
-
-    private <T extends Annotation> T getParameterizedAnnotation(Field field, Class<T> annotationType){
-        AnnotatedParameterizedType listType = (AnnotatedParameterizedType) field.getAnnotatedType();
-       return listType.getAnnotatedActualTypeArguments()[0].getAnnotationsByType(annotationType)[0];
-    }
-
-    private boolean hasAnnotation(Field field, final Class<? extends Annotation> annotation){
-        AnnotatedType type = field.getAnnotatedType();
-        return Arrays.stream(type.getAnnotations()).map(Annotation::annotationType).anyMatch(x -> x.equals(annotation));
-    }
-
-    private boolean hasParameterizedAnnotation(Field field, final Class<? extends Annotation> annotation){
-        AnnotatedParameterizedType listType = (AnnotatedParameterizedType) field.getAnnotatedType();
-        return Arrays.stream(listType.getAnnotatedActualTypeArguments()[0].getAnnotations()).
-                map(Annotation::annotationType).anyMatch(x -> x.equals(annotation));
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (ValidationError error : errors) {
+            stringBuilder.append(error.getPath()).append(" | ").append(error.getMessage()).append(" | ").append(error.getFailedValue()).append('\n');
+        }
+        return stringBuilder.toString();
     }
 }
