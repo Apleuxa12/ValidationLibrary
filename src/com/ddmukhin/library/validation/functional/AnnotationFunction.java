@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface AnnotationFunction {
 
-    Optional<ValidationError> validate(Annotation annotationInstance, Field field, Object object, String path);
+    Optional<ValidationError> validate(Annotation annotationInstance, Object object, String path);
 
 }

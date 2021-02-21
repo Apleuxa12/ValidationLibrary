@@ -17,7 +17,7 @@ public class ValidatorImpl implements Validator {
     private final Map<Class<? extends Annotation>, AnnotationFunction> functions = new HashMap<>();
 
     private void fillFunctions() {
-        functions.put(AnyOf.class, (annotationInstance, field, object, path) -> {
+        functions.put(AnyOf.class, (annotationInstance, object, path) -> {
             AnyOf annotation = (AnyOf) annotationInstance;
 
             if(!object.getClass().equals(String.class))
@@ -30,7 +30,7 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(InRange.class, (annotationInstance, field, object, path) -> {
+        functions.put(InRange.class, (annotationInstance, object, path) -> {
             InRange annotation = (InRange) annotationInstance;
 
             if (!Number.class.isAssignableFrom(object.getClass()))
@@ -43,7 +43,7 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(Negative.class, (annotationInstance, field, object, path) -> {
+        functions.put(Negative.class, (annotationInstance, object, path) -> {
             if (!Number.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
@@ -54,7 +54,7 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(Positive.class, (annotationInstance, field, object, path) -> {
+        functions.put(Positive.class, (annotationInstance, object, path) -> {
             if (!Number.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
@@ -65,13 +65,13 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(NotNull.class, (annotationInstance, field, object, path) -> {
+        functions.put(NotNull.class, (annotationInstance, object, path) -> {
             if (object == null)
                 return Optional.of(new NotNullError(path));
             return Optional.empty();
         });
 
-        functions.put(NotBlank.class, (annotationInstance, field, object, path) -> {
+        functions.put(NotBlank.class, (annotationInstance, object, path) -> {
             if (!String.class.equals(object.getClass()))
                 return Optional.empty();
 
@@ -82,7 +82,7 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(Size.class, (annotationInstance, field, object, path) -> {
+        functions.put(Size.class, (annotationInstance, object, path) -> {
             Size annotation = (Size) annotationInstance;
 
             if (!Collection.class.isAssignableFrom(object.getClass()))
@@ -95,7 +95,7 @@ public class ValidatorImpl implements Validator {
             return Optional.empty();
         });
 
-        functions.put(NotEmpty.class, (annotationInstance, field, object, path) -> {
+        functions.put(NotEmpty.class, (annotationInstance, object, path) -> {
             if (!Collection.class.isAssignableFrom(object.getClass()))
                 return Optional.empty();
 
@@ -128,7 +128,6 @@ public class ValidatorImpl implements Validator {
             if (!object.getClass().isAnnotationPresent(annotation))
                 return;
 
-
         for (Field field : object.getClass().getDeclaredFields()) {
             field.setAccessible(true);
 
@@ -138,17 +137,20 @@ public class ValidatorImpl implements Validator {
             if (!pathBuilder.toString().isEmpty()) pathBuilder.append('.');
             pathBuilder.append(field.getName());
 
+            final Object element = field.get(object);
+
             for (var annotation : objectAnnotations) {
-                if (hasAnnotation(field, annotation))
+                if (hasAnnotation(field, annotation)) {
                     functions.get(annotation).
-                            validate(getAnnotation(field, annotation), field, field.get(object), pathBuilder.toString()).
+                            validate(getAnnotation(field, annotation), element, pathBuilder.toString()).
                             ifPresent(errors::add);
+                }
             }
 
-            if (field.get(object) == null)
+            if (element == null) {
                 continue;
+            }
 
-            final Object element = field.get(object);
 
             if (List.class.isAssignableFrom(element.getClass())) {
                 List<Object> list = (List<Object>) field.get(object);
@@ -156,7 +158,7 @@ public class ValidatorImpl implements Validator {
                 for (var annotation : collectionAnnotations) {
                     if (hasAnnotation(field, annotation))
                         functions.get(annotation).
-                                validate(getAnnotation(field, annotation), field, list, pathBuilder.toString()).
+                                validate(getAnnotation(field, annotation), list, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
@@ -166,7 +168,7 @@ public class ValidatorImpl implements Validator {
                     for (var annotation : objectAnnotations) {
                         if (hasParameterizedAnnotation(field, annotation))
                             functions.get(annotation).
-                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), indexedPath).
+                                    validate(getParameterizedAnnotation(field, annotation), list.get(i), indexedPath).
                                     ifPresent(errors::add);
                     }
 
@@ -176,7 +178,7 @@ public class ValidatorImpl implements Validator {
                     for (var annotation : primitiveAnnotations) {
                         if (hasParameterizedAnnotation(field, annotation))
                             functions.get(annotation).
-                                    validate(getParameterizedAnnotation(field, annotation), field, list.get(i), indexedPath).
+                                    validate(getParameterizedAnnotation(field, annotation), list.get(i), indexedPath).
                                     ifPresent(errors::add);
                     }
 
@@ -187,7 +189,7 @@ public class ValidatorImpl implements Validator {
                         for (var annotation : collectionAnnotations) {
                             if (hasParameterizedAnnotation(field, annotation))
                                 functions.get(annotation).
-                                        validate(getParameterizedAnnotation(field, annotation), field, collection, indexedPath).
+                                        validate(getParameterizedAnnotation(field, annotation), collection, indexedPath).
                                         ifPresent(errors::add);
                         }
                     }
@@ -199,14 +201,14 @@ public class ValidatorImpl implements Validator {
                 for (var annotation : objectAnnotations) {
                     if (hasAnnotation(field, annotation))
                         functions.get(annotation).
-                                validate(getAnnotation(field, annotation), field, element, pathBuilder.toString()).
+                                validate(getAnnotation(field, annotation), element, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
                 for (var annotation : primitiveAnnotations) {
                     if (hasAnnotation(field, annotation))
                         functions.get(annotation).
-                                validate(getAnnotation(field, annotation), field, element, pathBuilder.toString()).
+                                validate(getAnnotation(field, annotation), element, pathBuilder.toString()).
                                 ifPresent(errors::add);
                 }
 
